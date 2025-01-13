@@ -1,0 +1,7 @@
+[dependencies]
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+clap = { version = "3.0" }
+tokio = { version = "1", features = ["full"] }
+# Optional for playing song previews
+rodio = "0.13"
