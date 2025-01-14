@@ -27,10 +27,11 @@ async fn main() {
         .about("Fetches song recommendations based on user input")
         .arg(
             Arg::new("query")
-                .about("The genre, artist, or mood to search for")
+                .help("The genre, artist, or mood to search for")
                 .required(true)
                 .index(1),
         )
+
         .get_matches();
 
     let query = matches.value_of("query").unwrap();
@@ -54,7 +55,7 @@ async fn fetch_recommendations(query: &str) -> Result<(), Box<dyn std::error::Er
             info!("Track: {}", track.name);
             if let Some(preview_url) = track.preview_url {
                 info!("Preview: {}", preview_url);
-                play_preview(&preview_url).await?;
+                tokio::spawn(play_preview(preview_url.to_string()));
             }
         }
     } else {
@@ -64,8 +65,8 @@ async fn fetch_recommendations(query: &str) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-async fn play_preview(url: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let response = reqwest::get(url).await?;
+async fn play_preview(url: String) -> Result<(), Box<dyn std::error::Error>> {
+    let response = reqwest::get(&url).await?;
     let bytes = response.bytes().await?;
     let cursor = Cursor::new(bytes);
 
