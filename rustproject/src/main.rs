@@ -13,8 +13,13 @@ struct Track {
 }
 
 #[derive(Deserialize)]
+struct TracksObject {
+    items: Vec<Track>,
+}
+
+#[derive(Deserialize)]
 struct SpotifyResponse {
-    tracks: Vec<Track>,
+    tracks: TracksObject,
 }
 
 #[tokio::main]
@@ -31,7 +36,6 @@ async fn main() {
                 .required(true)
                 .index(1),
         )
-
         .get_matches();
 
     let query = matches.value_of("query").unwrap();
@@ -43,6 +47,7 @@ async fn main() {
 async fn fetch_recommendations(query: &str) -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::new();
     let url = format!("https://api.spotify.com/v1/search?q={}&type=track", query);
+
     let response = client
         .get(&url)
         .header("Authorization", "Bearer YOUR_SPOTIFY_API_TOKEN")
@@ -51,11 +56,13 @@ async fn fetch_recommendations(query: &str) -> Result<(), Box<dyn std::error::Er
 
     if response.status().is_success() {
         let spotify_response = response.json::<SpotifyResponse>().await?;
-        for track in spotify_response.tracks {
+        for track in spotify_response.tracks.items {
             info!("Track: {}", track.name);
             if let Some(preview_url) = track.preview_url {
                 info!("Preview: {}", preview_url);
-                tokio::spawn(play_preview(preview_url.to_string()));
+                if let Err(e) = play_preview(preview_url.to_string()).await {
+                    error!("Failed to play preview: {}", e);
+                }
             }
         }
     } else {
